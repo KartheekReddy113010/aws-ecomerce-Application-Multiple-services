@@ -1,16 +1,8 @@
+-- Fresh install schema. Safe to run more than once: it never drops data.
 CREATE DATABASE IF NOT EXISTS cloud;
 USE cloud;
 
-DROP TABLE IF EXISTS order_items;
-DROP TABLE IF EXISTS orders;
-DROP TABLE IF EXISTS payments;
-DROP TABLE IF EXISTS recharges;
-DROP TABLE IF EXISTS service_activity;
-DROP TABLE IF EXISTS cart_items;
-DROP TABLE IF EXISTS pending_signups;
-DROP TABLE IF EXISTS users;
-
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) NOT NULL UNIQUE,
     full_name VARCHAR(150) DEFAULT NULL,
@@ -20,24 +12,28 @@ CREATE TABLE users (
     address TEXT DEFAULT NULL,
     otp_code VARCHAR(6) DEFAULT NULL,
     otp_expiry DATETIME DEFAULT NULL,
+    otp_attempts INT NOT NULL DEFAULT 0,
     last_login_otp_verified_at DATETIME DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE pending_signups (
+-- username is NOT unique here: two people may start signup with the same
+-- username; the users table decides who wins when the OTP is verified.
+CREATE TABLE IF NOT EXISTS pending_signups (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(150) NOT NULL UNIQUE,
-    username VARCHAR(100) NOT NULL UNIQUE,
+    username VARCHAR(100) NOT NULL,
     full_name VARCHAR(150) DEFAULT NULL,
     password_hash VARCHAR(255) NOT NULL,
     otp_code VARCHAR(6) NOT NULL,
     otp_expiry DATETIME NOT NULL,
+    otp_attempts INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE cart_items (
+CREATE TABLE IF NOT EXISTS cart_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     product_id VARCHAR(100) NOT NULL,
@@ -52,7 +48,7 @@ CREATE TABLE cart_items (
     CONSTRAINT fk_cart_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     shipping_name VARCHAR(150) NOT NULL,
@@ -66,7 +62,7 @@ CREATE TABLE orders (
     CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE order_items (
+CREATE TABLE IF NOT EXISTS order_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
     product_id VARCHAR(100) NOT NULL,
@@ -78,7 +74,7 @@ CREATE TABLE order_items (
     CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );
 
-CREATE TABLE payments (
+CREATE TABLE IF NOT EXISTS payments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     order_id INT DEFAULT NULL,
@@ -94,7 +90,7 @@ CREATE TABLE payments (
     CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
 );
 
-CREATE TABLE recharges (
+CREATE TABLE IF NOT EXISTS recharges (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     mobile_number VARCHAR(20) NOT NULL,
@@ -109,7 +105,7 @@ CREATE TABLE recharges (
     CONSTRAINT fk_recharges_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE service_activity (
+CREATE TABLE IF NOT EXISTS service_activity (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     service_name VARCHAR(100) NOT NULL,
@@ -120,6 +116,3 @@ CREATE TABLE service_activity (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_service_activity_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
-
-
